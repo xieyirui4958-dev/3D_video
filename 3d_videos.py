@@ -25,30 +25,30 @@ def load_dataset(path):
         return json.load(f)
 
 def to_numpy_pts(keypoints_list):
-    arr = np.array(keypoints_list, dtype=float)
-    if arr.ndim != 2 or arr.shape[1] != 3:
+    arr = np.array(keypoints_list, dtype=float)         #將(x,y,z)座標轉為(133,3)的NumPy 陣列
+    if arr.ndim != 2 or arr.shape[1] != 3:              #確保格式正確
         raise ValueError("Keypoints must be shape (N, 3).")
     return arr
 
 def pick_instance(instances):
     """同一幀中若有多個人，挑平均置信度最高的那個；沒有分數就取第一個。"""
-    if not instances:
+    if not instances:                              #沒有任何人被偵測到，直接回傳 None
         return None
-    best, best_avg = None, -1.0
-    for inst in instances:
-        scores = np.array(inst.get("keypoint_scores", []), dtype=float)
+    best, best_avg = None, -1.0                    #初始化置信度分數
+    for inst in instances:                         #逐一檢視每個人的置信度分數
+        scores = np.array(inst.get("keypoint_scores", []), dtype=float)     #從該人身上取出每個關節的置信度分數
         if scores.size == 0:
             if best is None:
                 best = inst
             continue
-        avg = float(np.mean(scores))
-        if avg > best_avg:
+        avg = float(np.mean(scores))               #計算該人的平均 keypoint 分數
+        if avg > best_avg:                         #若此人的平均分數高於目前最佳，就把他更新成新的最佳候選
             best_avg, best = avg, inst
     return best if best is not None else instances[0]
 
 def get_bones(meta, draw_face=True, draw_hands=True):
     """直接使用 JSON 的 skeleton_links；可選擇關閉臉/手。"""
-    links = [tuple(x) for x in meta.get("skeleton_links", [])]
+    links = [tuple(x) for x in meta.get("skeleton_links", [])]  #每一對 [a, b] 代表「關節 a 與關節 b 應該用線連起來」。
     if draw_face and draw_hands:
         return links
 
